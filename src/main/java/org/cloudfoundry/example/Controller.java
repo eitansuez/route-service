@@ -16,17 +16,18 @@
 
 package org.cloudfoundry.example;
 
+import java.net.URI;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestOperations;
-
-import java.net.URI;
 
 
 @RestController
@@ -38,21 +39,27 @@ final class Controller {
 
     static final String PROXY_SIGNATURE = "X-CF-Proxy-Signature";
 
-    private final Logger logger = LoggerFactory.getLogger(this.getClass());
+    private final static  Logger logger = LoggerFactory.getLogger(Controller.class);
 
     private final RestOperations restOperations;
 
+  	private RateLimiter rateLimiter;
+
     @Autowired
-    Controller(RestOperations restOperations) {
+    Controller(RestOperations restOperations,  RateLimiter rateLimiter) {
         this.restOperations = restOperations;
+        this.rateLimiter = rateLimiter;
     }
 
     @RequestMapping(headers = {FORWARDED_URL, PROXY_METADATA, PROXY_SIGNATURE})
     ResponseEntity<?> service(RequestEntity<byte[]> incoming) {
-        this.logger.info("Incoming Request: {}", incoming);
-
+        logger.debug("Incoming Request: {}", incoming);
+        if(rateLimiter.rateLimitRequest(incoming)){
+            logger.debug("Rate Limit imposed");
+        	return new ResponseEntity<>(HttpStatus.TOO_MANY_REQUESTS);
+        };
         RequestEntity<?> outgoing = getOutgoingRequest(incoming);
-        this.logger.info("Outgoing Request: {}", outgoing);
+        logger.debug("Outgoing Request: {}", outgoing);
 
         return this.restOperations.exchange(outgoing, byte[].class);
     }
@@ -60,7 +67,6 @@ final class Controller {
     private static RequestEntity<?> getOutgoingRequest(RequestEntity<?> incoming) {
         HttpHeaders headers = new HttpHeaders();
         headers.putAll(incoming.getHeaders());
-
         URI uri = headers.remove(FORWARDED_URL).stream()
             .findFirst()
             .map(URI::create)

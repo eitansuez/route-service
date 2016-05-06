@@ -2,11 +2,11 @@ package org.cloudfoundry.example;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.RequestEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -14,12 +14,15 @@ import org.springframework.stereotype.Component;
 @Component
 public class RateLimiter {
     private final static  Logger logger = LoggerFactory.getLogger(RateLimiter.class);
-
-    private ConcurrentHashMap<String, AtomicInteger> map = new ConcurrentHashMap<String, AtomicInteger>(1000);
+    
+    private final String KEY = "host";
+	@Autowired
+	private StringRedisTemplate redisTemplate;
+	
     
     @Scheduled(fixedRate = 15000)
     public void reportCurrentTime() {
-        map.clear();
+        redisTemplate.delete("host");
   }
 
 	public boolean rateLimitRequest(RequestEntity<?> incoming)  {
@@ -33,14 +36,14 @@ public class RateLimiter {
 			}
 			
 			String host = uri.getHost();
-		    AtomicInteger value = map.get(host);
+		    String value = (String)redisTemplate.opsForHash().get(KEY, host);
 		    int requestsPerSecond = 1;
 		    if (value == null){
-		    	value = new AtomicInteger(1);
-		    	map.put(host, value);
+		    	redisTemplate.opsForHash().put(KEY, host, "1");
 		    }
 		    else{
-		    	requestsPerSecond = value.incrementAndGet();
+		    	requestsPerSecond = Integer.parseInt(value) + 1;
+		    	redisTemplate.opsForHash().increment(KEY, host, 1);
 		    }
 		    
 		    if(requestsPerSecond > 3)

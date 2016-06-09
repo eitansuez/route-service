@@ -23,6 +23,7 @@ public class RateLimiter {
     @Scheduled(fixedRate = 15000)
     public void reportCurrentTime() {
         redisTemplate.delete("host");
+        logger.debug("Starting new 15 second interval");
   }
 
 	public boolean rateLimitRequest(RequestEntity<?> incoming)  {

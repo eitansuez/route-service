@@ -38,16 +38,16 @@ public class RateLimiter {
 
 			String host = uri.getHost();
 		    String value = (String)redisTemplate.opsForHash().get(KEY, host);
-		    int requestsPerSecond = 1;
+		    int requestsPerInterval = 1;
 		    if (value == null){
 		    	redisTemplate.opsForHash().put(KEY, host, "1");
 		    }
 		    else{
-		    	requestsPerSecond = Integer.parseInt(value) + 1;
+		    	requestsPerInterval = Integer.parseInt(value) + 1;
 		    	redisTemplate.opsForHash().increment(KEY, host, 1);
 		    }
 
-		    if(requestsPerSecond > 3)
+		    if(requestsPerInterval > 3)
 		    	return true;
 		    else
 		    	return false;

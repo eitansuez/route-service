@@ -14,15 +14,15 @@ import org.springframework.stereotype.Component;
 @Component
 public class RateLimiter {
     private final static  Logger logger = LoggerFactory.getLogger(RateLimiter.class);
-    
+
     private final String KEY = "host";
 	@Autowired
 	private StringRedisTemplate redisTemplate;
-	
-    
+
+
     @Scheduled(fixedRate = 15000)
-    public void reportCurrentTime() {
-        redisTemplate.delete("host");
+    public void resetCounts() {
+        redisTemplate.delete(KEY);
         logger.debug("Starting new 15 second interval");
   }
 
@@ -35,7 +35,7 @@ public class RateLimiter {
 				logger.error("error parsing url", e);
 				return false;
 			}
-			
+
 			String host = uri.getHost();
 		    String value = (String)redisTemplate.opsForHash().get(KEY, host);
 		    int requestsPerSecond = 1;
@@ -46,7 +46,7 @@ public class RateLimiter {
 		    	requestsPerSecond = Integer.parseInt(value) + 1;
 		    	redisTemplate.opsForHash().increment(KEY, host, 1);
 		    }
-		    
+
 		    if(requestsPerSecond > 3)
 		    	return true;
 		    else

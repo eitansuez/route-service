@@ -55,6 +55,12 @@ INFO  Outgoing Request: <GET http://localhost/original/get,{X-CF-Proxy-Metadata=
 ## Developing
 The project is set up as a Maven project and doesn't have any special requirements beyond that. It has been created using [IntelliJ][j] and contains configuration information for that environment, but should work with other IDEs.
 
+## Courses using this application.
+
+`Note`: When updating this application please make sure the corresponding instructions are updated within the following dependent courses. The instructions for these labs may not change but please review before pushing application to production with this [pipeline](http://concourse.enablement.pivotal.io/pipelines/route-service.
+
+- [pivotal-cloud-foundry-developer](https://github.com/pivotal-education/pivotal-cloud-foundry-developer):
+
 
 ## License
 The project is released under version 2.0 of the [Apache License][a].

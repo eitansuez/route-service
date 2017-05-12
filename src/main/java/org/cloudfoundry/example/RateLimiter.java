@@ -27,7 +27,7 @@ public class RateLimiter {
     logger.debug("Starting new 15 second interval");
   }
 
-  public boolean rateLimitRequest(RequestEntity<?> incoming) {
+  boolean rateLimitRequest(RequestEntity<?> incoming) {
     String forwardUrl = incoming.getHeaders().get(Controller.FORWARDED_URL).get(0);
     URI uri;
     try {
